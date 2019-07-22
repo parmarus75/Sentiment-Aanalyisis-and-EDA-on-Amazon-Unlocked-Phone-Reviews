@@ -1,0 +1,241 @@
+# -*- coding: utf-8 -*-
+"""
+Created on Fri Jun 14 10:16:03 2019
+
+@author: parma
+"""
+
+import pandas as pd
+import seaborn as sns
+import matplotlib.pyplot as plt
+import numpy as np
+
+
+data = pd.read_csv('Amazon_Unlocked_Mobile.csv')
+null_count = data.isnull().sum() # gives null count on all columns 
+total_null_count = data.isnull().sum().sum() # total null values in the table
+
+
+
+# =============================================================================
+#data_1 = data.iloc[1:300, :]
+
+# from sklearn.impute import SimpleImputer
+# sim = SimpleImputer(missing_values=np.nan, strategy='most_frequent' )
+# sim.fit(data_1[['Brand Name']])
+# data_1['Brand Name']=sim.transform(data_1[['Brand Name']])
+# 
+# #X = pd.get_dummies(X, prefix_sep='_', drop_first=True)
+# 
+# x = pd.get_dummies(data_1['Brand Name'], prefix_sep='_', drop_first=True)
+# y=pd.get_dummies(data_1['Brand Name'])
+# combine = pd.concat([data_1, y], axis=1)
+# combinee = pd.concat([data_1, x], axis=1)
+# 
+# =============================================================================
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+plt.figure(figsize=(15,15))
+sns.countplot(data['Rating'])
+plt.title('Rating Distribution', fontsize=40, color='blue')
+
+
+plt.figure(figsize=(19,19))
+data_product=data['Product Name'].value_counts() # unique products
+ax=data_product[:20].plot(kind='bar', color='red', figsize=(15,6))
+plt.title('Top 20 most rated product', fontsize=40, color='blue')
+ax.set_ylabel('Count', fontsize=25)
+
+
+
+data_brands = data['Brand Name'].value_counts()
+data_brands[:15].plot(kind='bar', color='red', figsize=(19,19))
+plt.title('Top 15 brands', fontsize=40, color='blue')
+
+
+
+
+data.sort_values('Price', ascending = False)
+
+
+# character length of reviews
+length_of_review = data.Reviews.dropna().map(lambda x: len(x))
+ax2=length_of_review.loc[length_of_review < 1000].hist(figsize=(19,19))
+plt.title('Character length of reviews', fontsize=40, color='blue')
+ax2.set_xlabel('Character Length of Review', fontsize=25)
+ax2.set_ylabel('Number of Reviews', fontsize=25)
+
+
+# price ratings
+Price_counts = data.Price.value_counts()
+plt.figure(figsize=(17,17))
+plt.scatter(Price_counts.index, Price_counts, color='red')
+plt.xlabel('Price', fontsize=24)
+plt.ylabel('Number of reviews', fontsize=28)
+plt.xticks(size=24, color='blue')
+plt.yticks(size=24, color='blue')
+plt.title('Price vs Review ', fontsize=40, color='blue')
+
+
+# correlation 
+plt.figure(figsize=(18,18))
+variable_correlations = data.corr()
+sns.heatmap(variable_correlations, annot=True)
+plt.xticks(size=24, color = 'blue')
+plt.yticks(size=24, color = 'blue')
+
+data.Price.median() # median price in the dataset 
+
+
+
+
+
+#------------------------------------------------------------------
+pivot1 = pd.pivot_table(data,
+            values = ['Rating', 'Review Votes'],
+            index =  ['Brand Name'],
+                       columns= [],
+                       aggfunc=[np.sum, np.mean, np.count_nonzero, np.std], 
+                       margins=True, fill_value=0).sort_values(by=('count_nonzero', 'Rating'), ascending=False).fillna('')
+
+# =============================================================================
+# xxx=data[data['Brand Name']=='Samsung'][['Review Votes']]
+# xxx[xxx['Review Votes']!=0]
+# =============================================================================
+top_10_brands = pivot1.reindex().head(11)
+top_10_brands = top_10_brands.reset_index()
+top_10_brands = top_10_brands.rename(columns={'index':'Brand Name'})
+tt_brands = top_10_brands['Brand Name']
+tt_brand2 = tt_brands.reset_index()
+top_10_brand_list = list(set(tt_brand2['Brand Name']))
+
+# =============================================================================
+# set(['siddharth', 'Parmar', 'KKKmche '])
+# set(['All','Samsung','BLU','Apple','LG','BlackBerry','Nokia','Motorola','HTC','CNPGD','OtterBox'])
+# 
+# =============================================================================
+
+
+
+#---------------------------------------------------------------------------
+# =============================================================================
+# data_apple = data.loc[data['Brand Name'].isin(['Apple','Samsung'])]
+# data_apple = data.loc[data['Brand Name'].isin(['Apple','Samsung'])]
+# data_apple = data.loc[data['Brand Name'].isin(['Apple','Samsung'])]
+# data_apple = data.loc[data['Brand Name'].isin(['Apple','Samsung'])]
+# data_apple = data.loc[data['Brand Name'].isin(['Apple','Samsung'])]
+# data_apple = data.loc[data['Brand Name'].isin(['Apple','Samsung'])]
+# data_apple = data.loc[data['Brand Name'].isin(['Apple','Samsung'])]
+# data_apple = data.loc[data['Brand Name'].isin(['Apple','Samsung'])]
+# 
+# =============================================================================
+data_apple = data.loc[data['Brand Name'].isin(['Apple'])]
+pivot2 = pd.pivot_table(data_apple,
+        values = ['Rating', 'Review Votes'],
+        index =  ['Product Name'],
+                   columns= [],
+                   aggfunc=[np.sum, np.mean, np.count_nonzero], 
+                   margins=True, fill_value=0).sort_values(by=('count_nonzero', 'Rating'), ascending=False).fillna('')
+topmost_prods = pivot2.reindex().head(n=30)
+topmost_prods = topmost_prods.reset_index()
+
+
+#----------------------------------
+
+tt_brand = topmost_prods['Product Name']
+tt_brand2 = tt_brand.reset_index()
+top_10_prod_list = list(set(tt_brand2['Product Name']))
+top_10_prod_list
+
+
+
+
+
+
+
+#-----------------------------------------------------------------------
+import nltk
+from nltk.corpus import stopwords
+import wordcloud
+from wordcloud import WordCloud, STOPWORDS, ImageColorGenerator
+def create_word_cloud(one_company):
+        data_one_company = data.loc[data['Brand Name'].isin([one_company])]
+        data_one_company_sample = data_one_company.sample(frac=0.05)
+        word_cloud_collection = ''
+        for val in data_one_company_sample.Reviews.str.lower():
+            tokens = nltk.word_tokenize(val)
+            tokens = [word for word in tokens if word not in stopwords.words('english')]
+            for words in tokens:
+                word_cloud_collection = word_cloud_collection + words + ' '
+        wordcloud = WordCloud(max_font_size=50, width=500, height=500).generate(word_cloud_collection)
+        plt.figure(figsize=(20,20))
+        plt.imshow(wordcloud)
+        plt.axis("off")
+        plt.show()
+
+    
+
+for i in top_10_brand_list:
+    print (i)
+    create_word_cloud(i)
+
+
+
+
+Data.columns =  ['product_name', 'brand_name','price','rating','review','votes']
+unique_products = Data.product_name.value_counts()
+
+
+
+
+
+# different samsung phones 
+len(list(data[data['Brand Name']=='Samsung']['Product Name'].value_counts()))
+#sns.countplot([data['Brand Name']=='Samsung']['Product Name'].value_counts())
+
+sns.barplot(data['Price'], data['Rating'])
+
+
+
+
+different_samsung_product=data[data['Brand Name']=='Samsung']['Product Name'].value_counts()
+sns.countplot(x)
+
+x=data.groupby(['Brand Name', 'Product Name']).sum()
+
+
+pivot = pd.pivot_table(df,
+            values = ['Rating', 'ReviewVotes'],
+            index = ['BrandName'], 
+                       columns= [],
+                       aggfunc=[np.sum, np.mean, np.count_nonzero, np.std], 
+                       margins=True).fillna('')
+pivot.head(10)
+
+
+
+
+Data=data.dropna(axis=0)  # dropped null value from the dataset 
+data.describe()
+Data.describe()
+
+
+n = data['Rating'].value_counts()
+plt.hist(n)
